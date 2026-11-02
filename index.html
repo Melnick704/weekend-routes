@@ -13,7 +13,8 @@ body{background:var(--bg);color:var(--ink)}
 .topnav a{color:#212529;text-decoration:none;font-weight:500;margin:0 .8rem;font-size:.95rem}
 .site-head{background:var(--panel);color:#fff;border-radius:2px;padding:1.4rem 1.2rem 1rem;margin-top:1.5rem}
 .site-head h1{font-size:1.6rem;text-align:center;margin:0 0 1rem}
-.site-head nav a{color:#fff;font-weight:700;text-decoration:none;margin-right:1.1rem;font-size:.95rem;padding-bottom:2px}
+.site-head nav{display:flex;flex-wrap:wrap;gap:.3rem 1.1rem}
+.site-head nav a{white-space:nowrap;color:#fff;font-weight:700;text-decoration:none;font-size:.95rem;padding-bottom:2px}
 .site-head nav a.active{border-bottom:2px solid #fff}
 .site-foot{background:var(--panel);color:#fff;text-align:center;padding:1rem;margin:2rem auto 0;font-size:.9rem}
 .page{display:none;padding-top:1.5rem}.page.show{display:block}
@@ -22,6 +23,14 @@ body{background:var(--bg);color:var(--ink)}
 .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
 .badge-cat{color:#fff}
 .step{border-left:4px solid var(--panel);padding:.4rem .8rem;margin-bottom:.6rem;background:#f8f9fa}
+.tour{border:1px solid #dee2e6;border-radius:6px;overflow:hidden;height:100%;display:flex;flex-direction:column}
+.tour-top{background:var(--panel);color:#fff;padding:.7rem .9rem}
+.tour-sale{background:#dc3545;color:#fff;font-size:.75rem;font-weight:700;border-radius:3px;padding:.1rem .4rem}
+.tour-body{padding:.8rem .9rem;flex:1;display:flex;flex-direction:column}
+.old{text-decoration:line-through;color:#6c757d;margin-right:.4rem}
+.rev{border:1px solid #dee2e6;border-radius:6px;padding:.8rem 1rem;margin-bottom:.7rem}
+.stars{color:#f0ad00;letter-spacing:1px}
+.demo{font-size:.85rem;color:#6c757d}
 .bottom{color:#6c757d;font-size:.85rem;border-top:1px solid #dee2e6;margin-top:2rem;padding:1rem 0}
 </style>
 </head>
@@ -37,6 +46,8 @@ body{background:var(--bg);color:var(--ink)}
       <a href="#home" data-p="home">Главная</a>
       <a href="#builder" data-p="builder">Конструктор маршрута</a>
       <a href="#map" data-p="map">Карта мест</a>
+      <a href="#hot" data-p="hot">Горящие туры</a>
+      <a href="#reviews" data-p="reviews">Отзывы</a>
     </nav>
   </div>
 
@@ -82,6 +93,28 @@ body{background:var(--bg);color:var(--ink)}
     <div class="table-responsive mt-3"><table class="table table-sm" id="ptable"></table></div>
   </section>
 
+  <section class="page" id="p-hot">
+    <h2 class="h3 text-center">Горящие туры</h2>
+    <p class="text-center demo">Готовые маршруты на ближайшие выходные со скидкой. В прототипе цены и даты условные.</p>
+    <div class="row g-3" id="tours"></div>
+  </section>
+
+  <section class="page" id="p-reviews">
+    <h2 class="h3 text-center">Отзывы</h2>
+    <p class="text-center demo">В прототипе показаны примеры отзывов для демонстрации. Свой отзыв можно оставить через форму ниже.</p>
+    <div id="revlist"></div>
+    <form id="rf" class="border rounded p-3 mt-3">
+      <h3 class="h6">Оставить отзыв</h3>
+      <div class="row g-2">
+        <div class="col-md-4"><input class="form-control" name="name" placeholder="Ваше имя" maxlength="40" required></div>
+        <div class="col-md-4"><select class="form-select" name="trip" id="rtrip"></select></div>
+        <div class="col-md-4"><select class="form-select" name="stars"><option value="5">5 звёзд</option><option value="4">4 звезды</option><option value="3">3 звезды</option><option value="2">2 звезды</option><option value="1">1 звезда</option></select></div>
+        <div class="col-12"><textarea class="form-control" name="text" rows="3" placeholder="Как прошла поездка?" maxlength="600" required></textarea></div>
+        <div class="col-12"><button class="btn btn-primary">Отправить</button></div>
+      </div>
+    </form>
+  </section>
+
   <div class="site-foot">© 2026 Маршруты выходного дня. Все права защищены.</div>
   <div class="bottom">© 2026 Конструктор маршрутов для поездок на выходные, Ростов-на-Дону</div>
 </div>
@@ -122,6 +155,28 @@ function build(q){
     days.push(stops);
   }
   return {days,cost,km:Math.round(km*10)/10,start:c};
+}
+
+const TOURS=[
+ {title:"Чеховский Таганрог",city:"Таганрог",days:1,old:2500,price:1700,when:"Ближайшая суббота",text:"Домик Чехова, Лавка Чеховых, Каменная лестница и обед с видом на залив."},
+ {title:"Казачья Старочеркасская",city:"Старочеркасская",days:1,old:3200,price:2400,when:"Ближайшее воскресенье",text:"Музей-заповедник, Воскресенский собор, казачье подворье с обедом и конная прогулка."},
+ {title:"Древний Танаис и Азов",city:"Азов",days:1,old:2000,price:1400,when:"Ближайшая суббота",text:"Крепостные валы, музей с мамонтом и раскопки древнегреческого города."},
+ {title:"Выходные на Азовском море",city:"Азовское побережье",days:2,old:4000,price:2900,when:"Суббота и воскресенье",text:"Песчаный пляж в Павло-Очаково и рыбный ужин на берегу."},
+ {title:"Ростов за один день",city:"Ростов-на-Дону",days:1,old:2200,price:1500,when:"Любой выходной",text:"Набережная, музей краеведения, Пушкинская, рынок и кафе донской кухни."},
+ {title:"Ростов и окрестности за 2 дня",city:"Ростов-на-Дону",days:2,old:5500,price:3900,when:"Суббота и воскресенье",text:"Ростов в первый день, Азов и Старочеркасская во второй."}];
+const SAMPLE_REVIEWS=[
+ {name:"Пример отзыва",trip:"Чеховский Таганрог",stars:5,text:"Маршрут собрался за пару минут, всё успели до закрытия музеев."},
+ {name:"Пример отзыва",trip:"Казачья Старочеркасская",stars:5,text:"Удобно, что сразу видно, сколько потратим. Конная прогулка понравилась больше всего."},
+ {name:"Пример отзыва",trip:"Выходные на Азовском море",stars:4,text:"Хотелось бы больше мест для ужина, но в целом план отличный."}];
+function myReviews(){try{return JSON.parse(localStorage.getItem("wr_reviews")||"[]")}catch(e){return []}}
+function renderReviews(){
+  const all=[...myReviews().map(r=>({...r,mine:1})),...SAMPLE_REVIEWS];
+  document.getElementById("revlist").innerHTML=all.map(r=>`<div class="rev"><div class="d-flex justify-content-between flex-wrap"><b>${esc(r.name)}${r.mine?' <span class="badge bg-secondary">ваш отзыв</span>':''}</b><span class="stars">${"★".repeat(r.stars)}${"☆".repeat(5-r.stars)}</span></div><div class="small text-muted">${esc(r.trip)}</div><div class="mt-1">${esc(r.text)}</div></div>`).join("");
+}
+function renderTours(){
+  document.getElementById("tours").innerHTML=TOURS.map((t,i)=>`<div class="col-md-6 col-lg-4"><div class="tour"><div class="tour-top d-flex justify-content-between align-items-start"><b>${t.title}</b><span class="tour-sale">-${Math.round((1-t.price/t.old)*100)}%</span></div><div class="tour-body"><div class="small text-muted mb-1">${t.when}, ${t.days===1?"1 день":"2 дня"}</div><div class="small mb-2">${t.text}</div><div class="mt-auto"><span class="old">${t.old} руб.</span><b>${t.price} руб.</b></div><button class="btn btn-sm btn-primary mt-2" data-tour="${i}">Построить маршрут</button></div></div></div>`).join("");
+  document.querySelectorAll("[data-tour]").forEach(b=>b.onclick=()=>{const t=TOURS[+b.dataset.tour];const q={city:t.city,scope:"region",days:t.days,budget:t.price,start:9,end:19,ints:["Museum","Nature","Food","Fun"],exclude:[]};location.hash=toHash(q);});
+  document.getElementById("rtrip").innerHTML=TOURS.map(t=>`<option>${t.title}</option>`).join("")+"<option>Свой маршрут</option>";
 }
 
 let rmap=null,bmap=null;
@@ -173,7 +228,7 @@ function initMap(){
 }
 
 function show(){
-  const name=(location.hash.slice(1).split("?")[0])||"home";const id=["home","about","builder","map"].includes(name)?name:"home";
+  const name=(location.hash.slice(1).split("?")[0])||"home";const id=["home","about","builder","map","hot","reviews"].includes(name)?name:"home";
   document.querySelectorAll(".page").forEach(s=>s.classList.toggle("show",s.id==="p-"+id));
   document.querySelectorAll(".site-head nav a").forEach(a=>a.classList.toggle("active",a.dataset.p===id));
   if(id==="map")setTimeout(initMap,50);
@@ -186,7 +241,9 @@ document.getElementById("ints").innerHTML=Object.entries(CATS).map(([k,v])=>`<di
 document.getElementById("filters").innerHTML=Object.entries(CATS).map(([k,v])=>`<div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" value="${k}" id="f_${k}" checked><label class="form-check-label" for="f_${k}"><span class="dot" style="background:${v[1]}"></span>${v[0]}</label></div>`).join("");
 document.getElementById("ptable").innerHTML="<thead><tr><th>Место</th><th>Город</th><th>Тип</th><th>Часы</th><th>Цена</th></tr></thead><tbody>"+PLACES.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(p.city)}</td><td>${CATS[p.cat][0]}</td><td class="text-nowrap">${fmt(p.open)}–${fmt(p.close)}</td><td class="text-nowrap">${p.price?p.price+" руб.":"бесплатно"}</td></tr>`).join("")+"</tbody>";
 document.getElementById("f").onsubmit=e=>{e.preventDefault();go(readForm());};
-window.addEventListener("hashchange",()=>{if(!location.hash.startsWith("#builder?"))show();});
+window.addEventListener("hashchange",show);
+document.getElementById("rf").onsubmit=e=>{e.preventDefault();const f=new FormData(e.target);const r={name:f.get("name").trim()||"Гость",trip:f.get("trip"),stars:+f.get("stars"),text:f.get("text").trim()};const list=myReviews();list.unshift(r);try{localStorage.setItem("wr_reviews",JSON.stringify(list.slice(0,20)))}catch(_){} e.target.reset();renderReviews();};
+renderTours();renderReviews();
 show();
 </script>
 </body>
