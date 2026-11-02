@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Маршруты выходного дня</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{--ink:#212529;--panel:#3d4f63;--bg:#ffffff}
+body{background:var(--bg);color:var(--ink)}
+.topnav{border-bottom:1px solid #e5e5e5;box-shadow:0 .25rem .75rem rgba(0,0,0,.05)}
+.topnav a{color:#212529;text-decoration:none;font-weight:500;margin:0 .8rem;font-size:.95rem}
+.site-head{background:var(--panel);color:#fff;border-radius:2px;padding:1.4rem 1.2rem 1rem;margin-top:1.5rem}
+.site-head h1{font-size:1.6rem;text-align:center;margin:0 0 1rem}
+.site-head nav a{color:#fff;font-weight:700;text-decoration:none;margin-right:1.1rem;font-size:.95rem;padding-bottom:2px}
+.site-head nav a.active{border-bottom:2px solid #fff}
+.site-foot{background:var(--panel);color:#fff;text-align:center;padding:1rem;margin:2rem auto 0;font-size:.9rem}
+.page{display:none;padding-top:1.5rem}.page.show{display:block}
+.map{height:420px;border-radius:6px;border:1px solid #dee2e6}
+.map-big{height:520px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+.badge-cat{color:#fff}
+.step{border-left:4px solid var(--panel);padding:.4rem .8rem;margin-bottom:.6rem;background:#f8f9fa}
+.bottom{color:#6c757d;font-size:.85rem;border-top:1px solid #dee2e6;margin-top:2rem;padding:1rem 0}
+</style>
+</head>
+<body>
+<div class="topnav py-3 text-center">
+  <a href="#home">Главная</a><a href="#about">О проекте</a>
+</div>
+
+<div class="container" style="max-width:1000px">
+  <div class="site-head">
+    <h1>Маршруты выходного дня</h1>
+    <nav>
+      <a href="#home" data-p="home">Главная</a>
+      <a href="#builder" data-p="builder">Конструктор маршрута</a>
+      <a href="#map" data-p="map">Карта мест</a>
+    </nav>
+  </div>
+
+  <section class="page" id="p-home">
+    <h2 class="h3">Добро пожаловать!</h2>
+    <p>Мы собрали интересные места Ростова-на-Дону и области, чтобы ты мог быстро спланировать поездку на выходные. Укажи город, бюджет и интересы, а сервис сам соберёт маршрут с расписанием, картой и ссылкой для друзей.</p>
+    <a class="btn btn-primary" href="#builder">Построить маршрут</a>
+    <a class="btn btn-secondary" href="#map">Посмотреть карту мест</a>
+    <h3 class="h5 mt-4">Как это работает</h3>
+    <div class="step"><b>1. Параметры.</b> Город, количество дней, бюджет и интересы.</div>
+    <div class="step"><b>2. Подбор мест.</b> Музеи, природа, еда и развлечения из базы точек.</div>
+    <div class="step"><b>3. Маршрут.</b> Порядок посещения с учётом дороги и часов работы.</div>
+    <div class="step"><b>4. Правки.</b> Лишнее место можно убрать, маршрут пересоберётся.</div>
+    <div class="step"><b>5. Готово.</b> Карта, расписание и ссылка на маршрут.</div>
+  </section>
+
+  <section class="page" id="p-about">
+    <h2 class="h3">О проекте</h2>
+    <p>Прототип сервиса «Конструктор маршрутов для поездок на выходные». В базе <span id="cnt"></span> мест в Ростове-на-Дону, Таганроге, Азове, Старочеркасской, Танаисе и на побережье Азовского моря. У каждой точки есть координаты, часы работы, среднее время посещения и примерная цена.</p>
+    <p>Алгоритм отбирает места под интересы и бюджет и идёт от стартовой точки к ближайшему подходящему месту, проверяя, успеваем ли мы до закрытия и укладываемся ли в день и в бюджет. Цены и часы работы указаны примерно.</p>
+  </section>
+
+  <section class="page" id="p-builder">
+    <h2 class="h3 text-center">Конструктор маршрута</h2>
+    <form id="f" class="row g-3 mt-1">
+      <div class="col-md-6"><label class="form-label">Откуда начинаем</label><select class="form-select" name="city" id="city"></select></div>
+      <div class="col-md-6"><label class="form-label">Где ищем места</label>
+        <select class="form-select" name="scope"><option value="region">Город и окрестности</option><option value="city">Только этот город</option></select></div>
+      <div class="col-6 col-md-3"><label class="form-label">Дней</label><select class="form-select" name="days"><option>1</option><option>2</option></select></div>
+      <div class="col-6 col-md-3"><label class="form-label">Бюджет, руб.</label><input class="form-control" type="number" name="budget" value="3000" min="0" step="100"></div>
+      <div class="col-6 col-md-3"><label class="form-label">Начало дня, ч</label><input class="form-control" type="number" name="start" value="9" min="6" max="14"></div>
+      <div class="col-6 col-md-3"><label class="form-label">Конец дня, ч</label><input class="form-control" type="number" name="end" value="19" min="12" max="23"></div>
+      <div class="col-12"><label class="form-label d-block">Интересы</label><div id="ints"></div></div>
+      <div class="col-12"><button class="btn btn-primary">Подобрать маршрут</button></div>
+    </form>
+    <div id="result" class="mt-4"></div>
+  </section>
+
+  <section class="page" id="p-map">
+    <h2 class="h3 text-center">Карта мест</h2>
+    <div id="filters" class="mb-2 text-center"></div>
+    <div id="bigmap" class="map map-big"></div>
+    <div class="table-responsive mt-3"><table class="table table-sm" id="ptable"></table></div>
+  </section>
+
+  <div class="site-foot">© 2026 Маршруты выходного дня. Все права защищены.</div>
+  <div class="bottom">© 2026 Конструктор маршрутов для поездок на выходные, Ростов-на-Дону</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const PLACES = [{"id": 1, "name": "Ростовский областной музей краеведения", "city": "Ростов-на-Дону", "cat": "Museum", "lat": 47.2225, "lon": 39.7105, "visit": 90, "price": 300, "open": 600, "close": 1080, "desc": "История Дона от древних времён до наших дней, сарматское золото."}, {"id": 2, "name": "Собор Рождества Пресвятой Богородицы", "city": "Ростов-на-Дону", "cat": "Museum", "lat": 47.2161, "lon": 39.7124, "visit": 30, "price": 0, "open": 480, "close": 1140, "desc": "Главный храм города рядом с Центральным рынком."}, {"id": 3, "name": "Центральный рынок", "city": "Ростов-на-Дону", "cat": "Food", "lat": 47.2172, "lon": 39.7128, "visit": 45, "price": 500, "open": 420, "close": 1080, "desc": "Донская рыба, раки, сыры и фрукты, можно перекусить."}, {"id": 4, "name": "Набережная Дона", "city": "Ростов-на-Дону", "cat": "Nature", "lat": 47.2163, "lon": 39.7095, "visit": 60, "price": 0, "open": 360, "close": 1380, "desc": "Прогулка вдоль реки, вид на левый берег и Ворошиловский мост."}, {"id": 5, "name": "Парк Горького", "city": "Ростов-на-Дону", "cat": "Nature", "lat": 47.2226, "lon": 39.7128, "visit": 45, "price": 0, "open": 360, "close": 1380, "desc": "Старейший парк города на Большой Садовой."}, {"id": 6, "name": "Пушкинская улица", "city": "Ростов-на-Дону", "cat": "Nature", "lat": 47.224, "lon": 39.721, "visit": 45, "price": 0, "open": 0, "close": 1440, "desc": "Пешеходный бульвар с кофейнями и скульптурами."}, {"id": 7, "name": "Ростовский зоопарк", "city": "Ростов-на-Дону", "cat": "Fun", "lat": 47.2557, "lon": 39.6728, "visit": 150, "price": 600, "open": 540, "close": 1080, "desc": "Один из крупнейших зоопарков России."}, {"id": 8, "name": "Кафе донской кухни в центре", "city": "Ростов-на-Дону", "cat": "Food", "lat": 47.2229, "lon": 39.716, "visit": 60, "price": 1200, "open": 600, "close": 1380, "desc": "Обед с ухой, пирожками и рыбой по-донски."}, {"id": 9, "name": "Домик Чехова", "city": "Таганрог", "cat": "Museum", "lat": 47.2132, "lon": 38.9277, "visit": 40, "price": 200, "open": 600, "close": 1020, "desc": "Дом, где родился Антон Павлович Чехов."}, {"id": 10, "name": "Лавка Чеховых", "city": "Таганрог", "cat": "Museum", "lat": 47.212, "lon": 38.93, "visit": 40, "price": 200, "open": 600, "close": 1020, "desc": "Магазин отца писателя и жилые комнаты семьи."}, {"id": 11, "name": "Каменная лестница", "city": "Таганрог", "cat": "Nature", "lat": 47.2094, "lon": 38.9433, "visit": 30, "price": 0, "open": 0, "close": 1440, "desc": "Старинная лестница к морю, отличный вид на залив."}, {"id": 12, "name": "Пушкинская набережная", "city": "Таганрог", "cat": "Nature", "lat": 47.2086, "lon": 38.942, "visit": 60, "price": 0, "open": 0, "close": 1440, "desc": "Прогулка вдоль Таганрогского залива."}, {"id": 13, "name": "Обед с видом на залив", "city": "Таганрог", "cat": "Food", "lat": 47.21, "lon": 38.94, "visit": 60, "price": 1000, "open": 660, "close": 1380, "desc": "Кафе у набережной, свежая рыба."}, {"id": 14, "name": "Азовский историко-археологический музей-заповедник", "city": "Азов", "cat": "Museum", "lat": 47.1083, "lon": 39.4231, "visit": 90, "price": 250, "open": 600, "close": 1080, "desc": "Палеонтология, скелет мамонта, история Азовских походов."}, {"id": 15, "name": "Земляные валы Азовской крепости", "city": "Азов", "cat": "Nature", "lat": 47.106, "lon": 39.416, "visit": 60, "price": 0, "open": 0, "close": 1440, "desc": "Валы XVIII века над Доном, пороховой погреб."}, {"id": 16, "name": "Старочеркасский музей-заповедник", "city": "Старочеркасская", "cat": "Museum", "lat": 47.2378, "lon": 40.04, "visit": 120, "price": 300, "open": 540, "close": 1020, "desc": "Бывшая столица донского казачества, Атаманский дворец."}, {"id": 17, "name": "Воскресенский войсковой собор", "city": "Старочеркасская", "cat": "Museum", "lat": 47.237, "lon": 40.039, "visit": 30, "price": 0, "open": 480, "close": 1080, "desc": "Первый каменный храм на Дону."}, {"id": 18, "name": "Казачье подворье с обедом", "city": "Старочеркасская", "cat": "Food", "lat": 47.2385, "lon": 40.042, "visit": 60, "price": 900, "open": 600, "close": 1200, "desc": "Казачья кухня и мастер-классы."}, {"id": 19, "name": "Конная прогулка у станицы", "city": "Старочеркасская", "cat": "Fun", "lat": 47.24, "lon": 40.046, "visit": 60, "price": 1500, "open": 600, "close": 1080, "desc": "Прогулка верхом по донским берегам."}, {"id": 20, "name": "Музей-заповедник «Танаис»", "city": "Танаис", "cat": "Museum", "lat": 47.269, "lon": 39.336, "visit": 120, "price": 300, "open": 540, "close": 1080, "desc": "Раскопки древнегреческого города III века до н. э."}, {"id": 21, "name": "Пляж в Павло-Очаково", "city": "Азовское побережье", "cat": "Nature", "lat": 47.115, "lon": 38.655, "visit": 180, "price": 0, "open": 480, "close": 1200, "desc": "Песчаный берег Азовского моря, тихий отдых."}, {"id": 22, "name": "Рыбный ужин на берегу", "city": "Азовское побережье", "cat": "Food", "lat": 47.117, "lon": 38.66, "visit": 60, "price": 900, "open": 720, "close": 1320, "desc": "Свежая азовская рыба в прибрежных кафе."}];
+const CENTERS = {"Ростов-на-Дону":[47.2224,39.7187],"Таганрог":[47.2096,38.9358],"Азов":[47.1078,39.4165],"Старочеркасская":[47.2370,40.0390],"Танаис":[47.2700,39.3370],"Азовское побережье":[47.1150,38.6550]};
+const CATS = {Museum:["Музеи и история","#7b4bc4"],Nature:["Природа и прогулки","#2e9d4f"],Food:["Еда","#e08a1e"],Fun:["Развлечения","#d63a5b"]};
+const fmt = m => String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0");
+const rad = d => d*Math.PI/180;
+function dist(a,b,c,d){const R=6371,x=Math.sin(rad(c-a)/2)**2+Math.cos(rad(a))*Math.cos(rad(c))*Math.sin(rad(d-b)/2)**2;return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}
+function travel(km){if(km<0.05)return 0;return Math.ceil(km/(km<=2.5?4.5:50)*60);}
+const esc = s => String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function build(q){
+  const ex=new Set(q.exclude), c=CENTERS[q.city];
+  let cand=PLACES.filter(p=>(!q.ints.length||q.ints.includes(p.cat))&&(q.scope!=="city"||p.city===q.city)&&!ex.has(p.id));
+  if(q.scope!=="city") cand=cand.filter(p=>dist(c[0],c[1],p.lat,p.lon)<=120);
+  let lat=c[0],lon=c[1],money=q.budget,cost=0,km=0;const days=[];
+  for(let d=1;d<=q.days;d++){
+    let now=q.start*60,end=q.end*60,food=0;const stops=[];
+    while(true){
+      let best=null,bs=1e9;
+      for(const p of cand){
+        if(p.cat==="Food"&&(food>=2||(food===1&&now<900)))continue;
+        if(p.price>money)continue;
+        const k=dist(lat,lon,p.lat,p.lon)*1.3,t=travel(k),ar=Math.max(now+t,p.open),lv=ar+p.visit;
+        if(lv>p.close||lv>end)continue;
+        let sc=t+(ar-now-t)*0.5;
+        if(p.cat==="Food")sc+=((ar>=720&&ar<=900)||ar>=1020)?-20:60;
+        if(sc<bs){bs=sc;best={p,ar,lv,t,k:Math.round(k*10)/10};}
+      }
+      if(!best)break;
+      stops.push(best);cand=cand.filter(x=>x!==best.p);money-=best.p.price;cost+=best.p.price;km+=best.k;
+      if(best.p.cat==="Food")food++;now=best.lv;lat=best.p.lat;lon=best.p.lon;
+    }
+    days.push(stops);
+  }
+  return {days,cost,km:Math.round(km*10)/10,start:c};
+}
+
+let rmap=null,bmap=null;
+function readForm(){const f=new FormData(document.getElementById("f"));return {city:f.get("city"),scope:f.get("scope"),days:+f.get("days"),budget:Math.max(0,+f.get("budget")||0),start:+f.get("start")||9,end:+f.get("end")||19,ints:f.getAll("ints"),exclude:[]};}
+function toHash(q){const p=new URLSearchParams({city:q.city,scope:q.scope,days:q.days,budget:q.budget,start:q.start,end:q.end,ints:q.ints.join(","),ex:q.exclude.join(",")});return "#builder?"+p;}
+function fromHash(){const h=location.hash.split("?")[1];if(!h)return null;const p=new URLSearchParams(h);return {city:CENTERS[p.get("city")]?p.get("city"):"Ростов-на-Дону",scope:p.get("scope")||"region",days:Math.min(2,Math.max(1,+p.get("days")||1)),budget:+p.get("budget")||0,start:+p.get("start")||9,end:+p.get("end")||19,ints:(p.get("ints")||"").split(",").filter(Boolean),exclude:(p.get("ex")||"").split(",").filter(Boolean).map(Number)};}
+function fillForm(q){const f=document.getElementById("f");f.city.value=q.city;f.scope.value=q.scope;f.days.value=q.days;f.budget.value=q.budget;f.start.value=q.start;f.end.value=q.end;f.querySelectorAll('[name=ints]').forEach(b=>b.checked=q.ints.includes(b.value));}
+
+function render(q){
+  const r=build(q),box=document.getElementById("result"),n=r.days.reduce((a,d)=>a+d.length,0);
+  if(!n){box.innerHTML='<div class="alert alert-warning">По таким параметрам не нашлось мест. Попробуйте увеличить бюджет или выбрать больше интересов.</div>';return;}
+  let h=`<div class="row g-2 mb-3 text-center">
+   <div class="col-6 col-md-3"><div class="border rounded p-2"><b>${n}</b><div class="small text-muted">мест</div></div></div>
+   <div class="col-6 col-md-3"><div class="border rounded p-2"><b>${r.cost} руб.</b><div class="small text-muted">примерные траты</div></div></div>
+   <div class="col-6 col-md-3"><div class="border rounded p-2"><b>${q.budget-r.cost} руб.</b><div class="small text-muted">остаток</div></div></div>
+   <div class="col-6 col-md-3"><div class="border rounded p-2"><b>${r.km} км</b><div class="small text-muted">в пути</div></div></div></div>
+   <div id="rmap" class="map mb-3"></div>`;
+  r.days.forEach((st,i)=>{
+    h+=`<h3 class="h5 mt-3">День ${i+1}</h3>`;
+    if(!st.length){h+='<p class="text-muted">На этот день мест не осталось.</p>';return;}
+    h+='<div class="table-responsive"><table class="table align-middle"><thead><tr><th>Время</th><th>Место</th><th>Дорога</th><th>Цена</th><th></th></tr></thead><tbody>';
+    st.forEach(s=>{h+=`<tr><td class="text-nowrap">${fmt(s.ar)}–${fmt(s.lv)}</td><td><b>${esc(s.p.name)}</b><div class="small"><span class="badge badge-cat" style="background:${CATS[s.p.cat][1]}">${CATS[s.p.cat][0]}</span> ${esc(s.p.city)}, работает ${fmt(s.p.open)}–${fmt(s.p.close)}</div><div class="small text-muted">${esc(s.p.desc)}</div></td><td class="small text-nowrap">${s.t?s.t+" мин, "+s.k+" км":"рядом"}</td><td class="text-nowrap">${s.p.price?s.p.price+" руб.":"бесплатно"}</td><td><button class="btn btn-sm btn-outline-danger" data-ex="${s.p.id}">Убрать</button></td></tr>`;});
+    h+='</tbody></table></div>';
+  });
+  if(q.exclude.length)h+=`<div class="alert alert-light border">Убраны: ${q.exclude.map(id=>esc(PLACES.find(p=>p.id===id)?.name||"")).join(", ")}. <a href="#" id="back">Вернуть все</a></div>`;
+  h+=`<label class="form-label fw-semibold mt-2">Ссылка на маршрут</label><div class="input-group"><input class="form-control" id="share" readonly value="${esc(location.href.split("#")[0]+toHash(q))}"><button class="btn btn-primary" type="button" id="copy">Скопировать</button></div>`;
+  box.innerHTML=h;
+  box.querySelectorAll("[data-ex]").forEach(b=>b.onclick=()=>{q.exclude.push(+b.dataset.ex);go(q);});
+  const back=document.getElementById("back");if(back)back.onclick=e=>{e.preventDefault();q.exclude=[];go(q);};
+  document.getElementById("copy").onclick=function(){const i=document.getElementById("share");i.select();(navigator.clipboard?navigator.clipboard.writeText(i.value):Promise.reject()).then(()=>this.textContent="Скопировано",()=>document.execCommand("copy"));};
+  if(window.L){
+    if(rmap){rmap.remove();}
+    rmap=L.map("rmap");L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OpenStreetMap"}).addTo(rmap);
+    const pts=[r.start];L.circleMarker(r.start,{radius:8,color:"#000",fillOpacity:1}).addTo(rmap).bindTooltip("Старт "+q.city);
+    let k=1;const cols=["#1e6fd9","#d9531e"];let prev=r.start;
+    r.days.forEach((st,i)=>{const line=[prev];st.forEach(s=>{const ll=[s.p.lat,s.p.lon];line.push(ll);pts.push(ll);
+      L.marker(ll,{icon:L.divIcon({className:"",html:`<div style="background:${CATS[s.p.cat][1]};color:#fff;border-radius:50%;width:24px;height:24px;line-height:24px;text-align:center;font-weight:700;border:2px solid #fff;box-shadow:0 0 3px #0006">${k++}</div>`,iconSize:[24,24],iconAnchor:[12,12]})}).addTo(rmap).bindPopup(`<b>${esc(s.p.name)}</b><br>${fmt(s.ar)}`);});
+      L.polyline(line,{color:cols[i%2],weight:4,opacity:.7}).addTo(rmap);if(st.length)prev=line[line.length-1];});
+    rmap.fitBounds(pts,{padding:[30,30],maxZoom:15});
+  }
+}
+function go(q){history.replaceState(null,"",toHash(q));render(q);}
+
+function initMap(){
+  if(bmap||!window.L){if(bmap)bmap.invalidateSize();return;}
+  bmap=L.map("bigmap").setView([47.2,39.4],8);L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OpenStreetMap"}).addTo(bmap);
+  const marks=PLACES.map(p=>{const m=L.circleMarker([p.lat,p.lon],{radius:8,color:"#fff",weight:2,fillColor:CATS[p.cat][1],fillOpacity:1}).bindPopup(`<b>${esc(p.name)}</b><br>${esc(p.desc)}<br>${esc(p.city)}, ${fmt(p.open)}–${fmt(p.close)}<br>${p.price?p.price+" руб.":"бесплатно"}, около ${p.visit} мин`).addTo(bmap);m.cat=p.cat;return m;});
+  document.querySelectorAll("#filters input").forEach(b=>b.onchange=()=>{const on=[...document.querySelectorAll("#filters input:checked")].map(x=>x.value);marks.forEach(m=>on.includes(m.cat)?m.addTo(bmap):m.remove());});
+}
+
+function show(){
+  const name=(location.hash.slice(1).split("?")[0])||"home";const id=["home","about","builder","map"].includes(name)?name:"home";
+  document.querySelectorAll(".page").forEach(s=>s.classList.toggle("show",s.id==="p-"+id));
+  document.querySelectorAll(".site-head nav a").forEach(a=>a.classList.toggle("active",a.dataset.p===id));
+  if(id==="map")setTimeout(initMap,50);
+  if(id==="builder"){const q=fromHash();if(q){fillForm(q);render(q);}}
+}
+
+document.getElementById("cnt").textContent=PLACES.length;
+document.getElementById("city").innerHTML=Object.keys(CENTERS).map(c=>`<option>${c}</option>`).join("");
+document.getElementById("ints").innerHTML=Object.entries(CATS).map(([k,v])=>`<div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="ints" value="${k}" id="i_${k}" ${k!=="Fun"?"checked":""}><label class="form-check-label" for="i_${k}">${v[0]}</label></div>`).join("");
+document.getElementById("filters").innerHTML=Object.entries(CATS).map(([k,v])=>`<div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" value="${k}" id="f_${k}" checked><label class="form-check-label" for="f_${k}"><span class="dot" style="background:${v[1]}"></span>${v[0]}</label></div>`).join("");
+document.getElementById("ptable").innerHTML="<thead><tr><th>Место</th><th>Город</th><th>Тип</th><th>Часы</th><th>Цена</th></tr></thead><tbody>"+PLACES.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(p.city)}</td><td>${CATS[p.cat][0]}</td><td class="text-nowrap">${fmt(p.open)}–${fmt(p.close)}</td><td class="text-nowrap">${p.price?p.price+" руб.":"бесплатно"}</td></tr>`).join("")+"</tbody>";
+document.getElementById("f").onsubmit=e=>{e.preventDefault();go(readForm());};
+window.addEventListener("hashchange",()=>{if(!location.hash.startsWith("#builder?"))show();});
+show();
+</script>
+</body>
+</html>
